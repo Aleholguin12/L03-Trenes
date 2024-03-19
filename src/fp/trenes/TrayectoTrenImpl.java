@@ -1,31 +1,33 @@
 package fp.trenes;
 
+import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class TrayectoTrenImpl {
-	
-	private String codigoTren; 
+public class TrayectoTrenImpl implements TrayectoTren {
+	private String codigoTren;
 	private String nombreTrayecto;
 	private TipoTren tipo;
-	private List<String> estaciones;
-	private List<LocalTime> horasSalida;
-	private List<LocalTime> horasLlegada;
-	public TrayectoTrenImpl(String codigoTren, String nombreTrayecto, TipoTren tipo, List<String> estaciones,
-			List<LocalTime> horasSalida, List<LocalTime> horasLlegada) {
+	private List<Parada> paradas;
+
+	public TrayectoTrenImpl(String codigoTren, String nombreTrayecto, TipoTren tipo, String origen, String llegada,
+			LocalTime horaSalida, LocalTime horaLlegada) {
 
 		checkCodigo(codigoTren);
-		checkHorasSalida(horasSalida);
-		checkHorasLlegada(horasLlegada);
-		checkHorarios(horasSalida, horasLlegada);
-		
+		checkHoraSalida(horaSalida);
+		checkHoraLlegada(horaLlegada);
+		checkHorarios(horaSalida, horaLlegada);
+
 		this.codigoTren = codigoTren;
 		this.nombreTrayecto = nombreTrayecto;
 		this.tipo = tipo;
-		this.estaciones = estaciones;
-		this.horasSalida = horasSalida;
-		this.horasLlegada = horasLlegada;
+		this.paradas = new ArrayList<Parada>();
+		Parada origenP = new Parada(origen, null, horaSalida);
+		Parada destinoP = new Parada(llegada, horaLlegada, null);
+		this.paradas.add(origenP);
+		this.paradas.add(destinoP);
 	}
 
 	private void checkCodigo(String codigoTren) {
@@ -33,53 +35,24 @@ public class TrayectoTrenImpl {
 			throw new IllegalArgumentException("El código del tren tiene que tener 5 dígitos");
 		}
 	}
-	
-	private void checkHorasSalida(List<LocalTime> horasSalida) {
-		if (horasSalida.get(0) == null) {
+
+	private void checkHoraSalida(LocalTime horaSalida) {
+		if (horaSalida == null) {
 			throw new IllegalArgumentException("La hora de salida de la primera estación no puede ser null");
 		}
 	}
-	
-	private void checkHorasLlegada(List<LocalTime> horasLlegada) {
-		if (horasLlegada.get(horasLlegada.size() - 1) == null) {
+
+	private void checkHoraLlegada(LocalTime horaLlegada) {
+		if (horaLlegada == null) {
 			throw new IllegalArgumentException("La hora de llegada de la última estación no puede ser null");
 		}
 	}
-	
-	private void checkHorarios(List<LocalTime> horasSalida, List<LocalTime> horasLlegada) {
-		if (!(horasSalida.get(0).isBefore(horasLlegada.get(horasLlegada.size() - 1)))) {
-			throw new IllegalArgumentException("La hora de salida de la primera estación debe ser anterior a la hora de "
-					+ "llegada a la última estación");
-		}
-	}
-	
-	private void checkPosicion(int posicion) {
-		if (!(posicion >= 1 && posicion < estaciones.size())) {
-			throw new IllegalArgumentException("Debe introducirse en una posición intermedia");
-		}
-	}
-	
-	private void checkHora (LocalTime horaLlegada, LocalTime horaSalida) {
-		if (horaSalida.isBefore(horaLlegada)) {
-			throw new IllegalArgumentException("La hora de salida no puede ser anterior a la hora de llegada");
-		}
-	}
-	
-	private void checkHoraLlegadaConRespectoEstAnt (LocalTime horaLlegada, String estacion) {
-		if (horaLlegada.isBefore(horasSalida.get(estaciones.indexOf(estacion) - 1))) {
-			throw new IllegalArgumentException("La hora de llegada es anterior a la hora de salida de la estación anterior");
-		}
-	}
-	
-	private void checkHoraSalidaConRespectoEstAnt (LocalTime horaSalida, String estacion) {
-		if (horaSalida.isAfter(horasLlegada.get(estaciones.indexOf(estacion) + 1))) {
-			throw new IllegalArgumentException("La hora de salida es posterior a la hora de llegada de la estación siguiente");
-		}
-	}
-	
-	private void checkEliminarEstacion(String estacion) {
-		if (estaciones.indexOf(estacion) == 0 || estaciones.indexOf(estacion) == (estaciones.size() - 1) || !(estaciones.contains(estacion))) {
-			throw new IllegalArgumentException("La estacion debe de estar en la lista y además no puede ser la primera ni la última");
+
+	private void checkHorarios(LocalTime horaSalida, LocalTime horaLlegada) {
+		if (!(horaSalida.isBefore(horaLlegada))) {
+			throw new IllegalArgumentException(
+					"La hora de salida de la primera estación debe ser anterior a la hora de "
+							+ "llegada a la última estación");
 		}
 	}
 
@@ -96,47 +69,44 @@ public class TrayectoTrenImpl {
 	}
 
 	public List<String> getEstaciones() {
-		return estaciones;
+		List<String> result = new ArrayList<String>();
+		for (Parada p : paradas) {
+			result.add(p.estacion());
+		}
+		return result;
 	}
 
 	public List<LocalTime> getHorasSalida() {
-		return horasSalida;
+		List<LocalTime> result = new ArrayList<LocalTime>();
+		for (Parada p : paradas) {
+			result.add(p.horaSalida());
+		}
+		return result;
 	}
 
 	public List<LocalTime> getHorasLlegada() {
-		return horasLlegada;
+		List<LocalTime> result = new ArrayList<LocalTime>();
+		for (Parada p : paradas) {
+			result.add(p.horaLlegada());
+		}
+		return result;
 	}
-	
-	public LocalTime getHoraSalida(String estacion) {
-		return horasSalida.get(estaciones.indexOf(estacion));
+
+	public LocalTime getHoraLlegada() {
+		return paradas.get(paradas.size() - 1).horaLlegada();
 	}
-	
-	public LocalTime getHoraLlegada(String estacion) {
-		return horasLlegada.get(estaciones.indexOf(estacion));
+
+	public LocalTime getHoraSalida() {
+		return paradas.get(0).horaSalida();
 	}
-	
-	public void anadirEstacionIntermedia(int posicion, String estacion, LocalTime horaLlegada, LocalTime horaSalida) {
-		checkPosicion(posicion);
-		checkHora (horaLlegada, horaSalida);
-		checkHoraLlegadaConRespectoEstAnt (horaLlegada, estacion);
-		checkHoraSalidaConRespectoEstAnt (horaSalida, estacion);
-		
-		estaciones.add(posicion, estacion);
-		horasLlegada.add(posicion, horaLlegada);
-		horasSalida.add(posicion, horaSalida);
-	}
-	
-	public void eliminarEstacionIntermedia(String estacion) {
-		checkEliminarEstacion(estacion);
-		int posicion = estaciones.indexOf(estacion);
-		estaciones.remove(estacion);
-		horasSalida.remove(posicion);
-		horasLlegada.remove(posicion);
+
+	public Duration getDuracionTrayecto() {
+		return Duration.between(getHoraSalida(), getHoraLlegada());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(codigoTren, horasSalida, nombreTrayecto);
+		return Objects.hash(codigoTren, nombreTrayecto, getHoraSalida());
 	}
 
 	@Override
@@ -148,18 +118,99 @@ public class TrayectoTrenImpl {
 		if (getClass() != obj.getClass())
 			return false;
 		TrayectoTrenImpl other = (TrayectoTrenImpl) obj;
-		return Objects.equals(codigoTren, other.codigoTren) && Objects.equals(horasSalida, other.horasSalida)
-				&& Objects.equals(nombreTrayecto, other.nombreTrayecto);
+		return Objects.equals(codigoTren, other.codigoTren) && Objects.equals(nombreTrayecto, other.nombreTrayecto)
+				&& Objects.equals(getHoraSalida(), other.getHoraSalida());
+	}
+
+	@Override
+	public String toString() {
+		String result = nombreTrayecto + "-" + tipo + "(" + codigoTren + ")\n";
+		for (Parada p : paradas) {
+			String llegada = p.horaLlegada() != null ? p.horaLlegada().toString() : "";
+			String salida = p.horaSalida() != null ? p.horaSalida().toString() : "";
+			result += p.estacion() + "\t" + llegada + "\t" + salida + "\n";
+		}
+		return result;
+	}
+
+	// Otras operaciones
+	public LocalTime getHoraSalida(String estacion) {
+		LocalTime result = null;
+
+		int pos = getEstaciones().indexOf(estacion);
+		if (pos != -1 && pos != getEstaciones().size() - 1) {
+			result = getHorasSalida().get(pos);
+		}
+
+		return result;
+	}
+
+	public LocalTime getHoraLlegada(String estacion) {
+		LocalTime result = null;
+
+		int pos = getEstaciones().indexOf(estacion);
+		if (pos != -1 && pos != 0) {
+			result = getHorasLlegada().get(pos);
+		}
+
+		return result;
 	}
 
 	
-	@Override
-	public String toString() {
-		return nombreTrayecto + "-" + tipo + " (" + codigoTren + ")\n" + estaciones.get(0) + "	" + " " +
-			"	" + horasSalida.get(0) + "\n" + estaciones.get(estaciones.size() - 1) + "	" + horasLlegada.get(estaciones.size() - 1) + 
-			"	" + " ";
+	private void checkPosicion(int posicion) {
+		if (!(posicion >= 1 && posicion < getEstaciones().size())) {
+			throw new IllegalArgumentException("Debe introducirse en una posición intermedia");
+		}
 	}
 	
+	private void checkHora(LocalTime horaLlegada, LocalTime horaSalida) {
+		if (horaSalida.isBefore(horaLlegada)) {
+			throw new IllegalArgumentException("La hora de salida no puede ser anterior a la hora de llegada");
+		}
+	}
 	
+	private void checkHoraPosteriorA(LocalTime hora, LocalTime referencia) {
+		if (!hora.equals(referencia) && !hora.isAfter(referencia)) {
+			throw new IllegalArgumentException(
+					"La hora de salida es posterior a la hora de llegada de la estación siguiente");
+		}
+	}
+
+	public void anadirEstacionIntermedia(int posicion, String estacion, LocalTime horaLlegada, 
+			LocalTime horaSalida) {
+		
+		checkPosicion(posicion);
+		checkHora(horaLlegada, horaSalida);
+		
+		Parada anterior = paradas.get(posicion-1);
+		Parada posterior = paradas.get(posicion);
+		
+		checkHoraPosteriorA(horaLlegada, anterior.horaSalida());
+		checkHoraPosteriorA(posterior.horaLlegada(), horaSalida);
+
+		Parada actual = new Parada(estacion, horaLlegada, horaSalida);
+		paradas.add(posicion, actual);
+		
+	}
+
+	private void checkEliminarEstacion(String estacion) {
+		int pos = getEstaciones().indexOf(estacion);
+		if (pos == 0 || pos == getEstaciones().size() - 1 || pos == -1) {
+			throw new IllegalArgumentException(
+					"La estacion debe de estar en la lista y además no puede ser la primera ni la última");
+		}
+	}
+
+	public void eliminarEstacionIntermedia(String estacion) {
+		checkEliminarEstacion(estacion);
+		int posicion = getEstaciones().indexOf(estacion);
+		paradas.remove(posicion);
+	}
+
+	
+
+	
+
+
 
 }
